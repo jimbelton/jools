@@ -1,0 +1,143 @@
+#!/usr/bin/python
+
+import argparse
+import os
+import re
+import sys
+
+#def usage():
+#    sys.exit("""\
+#usage: """ + __file__ + """ [-A #] [-c] [-d dir] [-e ext|-f file] [-lns] [-x file] [directory] [pattern]
+#       List names of files in directory (default .), or lines of files matching pattern if specified
+#    -A #:    include # extra lines of context after a matching line
+#    -c:      ignore comments (e.g. <!-- ... -->)
+#    -d dir:  path must include '/dir/' (dir is a regular expression)
+#    -e ext:  file name must end in 'ext' (ext is a string); exludes -f
+#    -f file: file name must match 'file' (file is a regular expression)
+#    -l:      only print the names of files even if a pattern is specified
+#    -n:      include line numbers in output
+#    -q:      suppress warning messages
+#    -s:      suppress noise from common output files (e.g. TEST-*.xml)
+#    -x file: exclude if base name matches 'file' (file is a regular expression)
+#""")
+
+argumentParser = argparse.ArgumentParser(
+        description="List the files in a directory (default .), or the lines of files matching a pattern if specified")
+fileCriteria = argumentParser.add_mutually_exclusive_group()
+fileCriteria.add_argument("-e", "--extension",         help="file names must end in the string 'EXTENSION'")
+fileCriteria.add_argument("-f", "--file-pat",          help="file name must match the regular expression /FILE_PAT/")
+argumentParser.add_argument("-N", "--no-line-numbers", help="don't include line numbers in output", action='store_true')
+argumentParser.add_argument("directory",               help="directory to search (defaults to '.')", default=".", nargs='?')
+argumentParser.add_argument("pattern",                 help="pattern to search for (list files by default)", nargs='?')
+arguments = argumentParser.parse_args()
+
+#my %options;
+#scalar(scalar(@ARGV) != 0) && getopts('A:cd:e:f:lnqsx:', \%options) or usage();
+#$options{e} && $options{f} and usage();
+#
+## If the first argument isn't a directory, default to .
+#if (scalar(@ARGV) == 0 || ! -d $ARGV[0]) {
+#    unshift(@ARGV, ".");
+#}
+#
+#my $dirExp   = $options{d}       ? qr/\/$options{d}(\/|$)/ : undef;
+filePat = re.compile(arguments.file_pat + '$') if arguments.file_pat else None
+#my $exclExp  = $options{x}       ? qr/\/$options{x}$/      : undef;
+#my $pruneExp = undef;
+pattern = re.compile(arguments.pattern) if arguments.pattern else None
+
+#
+#if ($options{s} && $options{e} =~ /\.xml$/) {
+#    $exclExp  = $options{x} ? qr/($options{x}|TEST-.+\.xml)$/ : qr/TEST-.+\.xml$/;
+#    $pruneExp = qr/\/testData\//;
+#}
+#
+#my $comment = undef;
+#
+#if ($options{c} && $options{e} =~ /\.xml$/) {
+#    $comment = "<!--.*-->";
+#}
+
+def fileIsWanted(filePath, fileName=None):
+    if arguments.extension:
+        if not filePath.endswith(arguments.extension):
+            return False
+
+    elif arguments.file_pat:
+        if not filePat.match(fileName if fileName else os.path.basename(filePath)):
+            return False
+
+    return True
+
+directories = os.walk(arguments.directory, followlinks=True)
+
+for directory in directories:
+    # if not grepping, apply filters and if met, list the directory
+
+    if not pattern and fileIsWanted(directory[0]):
+        print directory[0]
+
+    for fileName in sorted(directory[2]):
+        filePath = directory[0] + "/" + fileName
+
+#        if ($options{d}) {
+#            return if $File::Find::name !~ $dirExp;
+#        }
+
+        if not fileIsWanted(filePath, fileName):
+            continue
+
+#        if ($exclExp) {
+#            return if $File::Find::name =~ $exclExp;
+#        }
+#
+#        if ($pruneExp) {
+#            return if $File::Find::name =~ $pruneExp;
+#        }
+
+        # If not grepping, just print the file name
+
+        if not pattern:
+            print filePath
+            continue
+
+        with open(filePath) as fileStream:
+            fileLines = fileStream.readlines()
+
+#        if (!open($file, "<", $_)) {
+#            if (-l $_) {
+#                print "warning: Can't open link '" . $File::Find::name . "'\n" if !$options{q};
+#                return;
+#            }
+#
+#            die("$0: Can't open '" . $File::Find::name . "'");
+#        }
+
+        for (lineNumber, line) in enumerate(fileLines):
+
+#        for (my $context = 0; my $line = <$file>; $context--) {
+#            if ($comment) {
+#                $line =~ s/${comment}//g;
+#            }
+
+            if pattern.search(line):
+#                if ($options{l}) {
+#                    print $File::Find::name . ($options{n} ? ":" . $. : "") . "\n";
+#                    last;
+#                }
+
+                print filePath + ("" if arguments.no_line_numbers else ":" + str(lineNumber)) + ":" + line,
+#                print filePath . ($options{n} ? ":" . $. : "") . ":$line";
+#                $context = $options{A} ? $options{A} + 1 : 0;
+#            }
+#            elsif ($context > 0) {
+#                print $File::Find::name . ($options{n} ? ":" . $. : "") . ":$line";
+#            }
+#        }
+#
+#        close $file;
+#    },
+#    ($ARGV[0])
+#);
+
+#sys.exit(0)
