@@ -24,34 +24,22 @@ if upgrade:
 
 install("geany")
 install("git")
+install("vim")
+
+# Configure bash
+
+#bashrc = os.path.expanduser("~/.bashrc")
+#open(bashrc, "a").close()    # Create file if not there
 
 # Configure git
 
-email     = False
-name      = False
-gitconfig = os.path.expanduser("~/.gitconfig")
-open(gitconfig, "a").close()    # Create file if not there
-
-with open(gitconfig, "r") as config:
-    email = False
-    name  = False
-    line  = config.readline()
-
-    while line and not re.search(r'\[user\]', line):
-	line = config.readline()
-
-    line  = config.readline()
-
-    while line and not re.match(r'\s*\[[^\]]+\]\s*$', line):
-	email = email or re.match(r'\s+email\s*=', line)
-	name  = name  or re.match(r'\s+name\s*=', line)
-	line  = config.readline()
-
-if not email:
+if os.system("git config --global user.email > /dev/null"):
     email = raw_input("Enter your email for git:")
     os.system("git config --global user.email '{}'".format(email))
 
-if not name:
-    name = raw_input("Enter Your Name for git:")
+if os.system("git config --global user.name > /dev/null"):
+    name = raw_input("Enter your first and last name for git:")
     os.system("git config --global user.name '{}'".format(name))
-
+    
+if os.system("git config --global core.editor > /dev/null"):
+    os.system("git config --global core.editor vim")
