@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import os
+import re
 import sys
 
 def install(package):
@@ -23,3 +24,34 @@ if upgrade:
 
 install("geany")
 install("git")
+
+# Configure git
+
+email     = False
+name      = False
+gitconfig = os.path.expanduser("~/.gitconfig")
+open(gitconfig, "a").close()    # Create file if not there
+
+with open(gitconfig, "r") as config:
+    email = False
+    name  = False
+    line  = config.readline()
+
+    while line and not re.search(r'\[user\]', line):
+	line = config.readline()
+
+    line  = config.readline()
+
+    while line and not re.match(r'\s*\[[^\]]+\]\s*$', line):
+	email = email or re.match(r'\s+email\s*=', line)
+	name  = name  or re.match(r'\s+name\s*=', line)
+	line  = config.readline()
+
+if not email:
+    email = raw_input("Enter your email for git:")
+    os.system("git config --global user.email '{}'".format(email))
+
+if not name:
+    name = raw_input("Enter Your Name for git:")
+    os.system("git config --global user.name '{}'".format(name))
+
