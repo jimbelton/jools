@@ -41,6 +41,12 @@ arguments = argumentParser.parse_args()
 #}
 #
 #my $dirExp   = $options{d}       ? qr/\/$options{d}(\/|$)/ : undef;
+
+# Special case for c and h
+if arguments.extension == ".[ch]":
+    arguments.extension = None
+    arguments.file_pat  = r'.+\.[ch]'
+
 filePat = re.compile(arguments.file_pat + '$') if arguments.file_pat else None
 #my $exclExp  = $options{x}       ? qr/\/$options{x}$/      : undef;
 #my $pruneExp = undef;
