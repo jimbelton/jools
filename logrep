@@ -17,27 +17,37 @@ for line in subprocess.check_output(["curl", "-sS", "localhost:9200/_cat/indices
 indeces.sort(reverse=True)
 lines      = []
 lineNumber = 0
+query      = {"match_all": {}}
 index = json.loads(subprocess.check_output(["curl", "-sS", "-XGET", "localhost:9200/{}/_search?scroll=1m".format(indeces[0]),
-                                            "-d", '{"query": {"match_all": {}}, size: 10000}']))
+                                            "-d", '{"query": %s, "size": 10000}' % json.dumps(query)]))
+
 while True:
     try:
+        scroll_id = index["_scroll_id"]
+
         if len(index["hits"]["hits"]) == 0:
             break
     except KeyError:
-        sys.exit("Failed to find 'hits' in response: " + str(index))
+        sys.exit("Failed to find '_scroll_id' or 'hits' in response: " + str(index))
 
-    lines.append(index["hits"]["hits"])
-    print str(len(index["hits"]["hits"])) + " " + index["hits"]["hits"][0]["_source"]["@timestamp"]
-    scroll_id = index["_scroll_id"]
-
+    lines.extend(index["hits"]["hits"])
+    # print str(len(index["hits"]["hits"])) + " " + index["hits"]["hits"][0]["_source"]["@timestamp"]
+    break
     # Note: Don't use format due to {} in JSON querys
     index = json.loads(subprocess.check_output(["curl", "-sS", "-XGET", "localhost:9200/_search/scroll",
                                                 "-d", '{"scroll" : "1m", "scroll_id" : "%s"}' % scroll_id]))
 
-subprocess.check(["curl", "-sS", "-XDELETE", "localhost:9200/_search/scroll", "-d", '{"scroll_id" : ["%s"]}' % scroll_id])
+subprocess.check_output(["curl", "-sS", "-XDELETE", "localhost:9200/_search/scroll", "-d", '{"scroll_id" : ["%s"]}' % scroll_id])
 lines.reverse()
-sys.exit(str(len(lines)))
+sys.exit(str(lines[0]))
 
 for line in lines:
     line = line["_source"]
-    print "{}:{}:{}:{}".format(line["host"], line["source"], line["@timestamp"], line["data"])
+
+    try:
+        if "data" in line:
+            print "{}:{}:{}:{}".format(line["host"], line["source"], line["@timestamp"], line["data"])
+        else:
+            print "{}:{}:{}:{}".format(line["host"], line["source"], line["@timestamp"], line["message"])
+    except KeyError as error:
+        sys.exit("Key {} not found in line: {}".format(str(error), str(line)))
