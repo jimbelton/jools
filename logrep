@@ -17,20 +17,24 @@ for line in subprocess.check_output(["curl", "-sS", "localhost:9200/_cat/indices
 indeces.sort(reverse=True)
 lines      = []
 lineNumber = 0
-
+index = json.loads(subprocess.check_output(["curl", "-sS", "-XGET", "localhost:9200/{}/_search?scroll=1m".format(indeces[0]),
+                                            "-d", '{"query": {"match_all": {}}, size: 10000}']))
 while True:
-    # Note: Don't use format due to empty object {} in JSON query
-    index = json.loads(subprocess.check_output(["curl", "-sS", "-XPOST", "localhost:9200/{}/_search".format(indeces[0]), "-d",
-                                                '{"query": {"match_all": {}}, "from": %d, "size": 10000}' % (len(lines))]))
-
     try:
-        lines.append(index["hits"]["hits"])
+        if len(index["hits"]["hits"]) == 0:
+            break
     except KeyError:
-        sys.exit("No hits in output: {}".format(str(index)))
+        sys.exit("Failed to find 'hits' in response: " + str(index))
 
-    if len(index["hits"]["hits"]) < 10000:
-        break
+    lines.append(index["hits"]["hits"])
+    print str(len(index["hits"]["hits"])) + " " + index["hits"]["hits"][0]["_source"]["@timestamp"]
+    scroll_id = index["_scroll_id"]
 
+    # Note: Don't use format due to {} in JSON querys
+    index = json.loads(subprocess.check_output(["curl", "-sS", "-XGET", "localhost:9200/_search/scroll",
+                                                "-d", '{"scroll" : "1m", "scroll_id" : "%s"}' % scroll_id]))
+
+subprocess.check(["curl", "-sS", "-XDELETE", "localhost:9200/_search/scroll", "-d", '{"scroll_id" : ["%s"]}' % scroll_id])
 lines.reverse()
 sys.exit(str(len(lines)))
 
