@@ -1,12 +1,24 @@
 #!/usr/bin/python
 
+import argparse
 import os
 import re
 import sys
 
+argumentParser = argparse.ArgumentParser(
+        description="List the files in a directory (default .), or the lines of files matching a pattern if specified")
+fileCriteria = argumentParser.add_mutually_exclusive_group()
+fileCriteria.add_argument("-e", "--extension",         help="file names must end in the string 'EXTENSION'")
+fileCriteria.add_argument("-f", "--file-pat",          help="file name must match the regular expression /FILE_PAT/")
+argumentParser.add_argument("-N", "--no-line-numbers", help="don't include line numbers in output", action='store_true')
+argumentParser.add_argument("directory",               help="directory to search (defaults to '.')", default=".", nargs='?')
+argumentParser.add_argument("pattern",                 help="pattern to search for (list files by default)", nargs='?')
+arguments = argumentParser.parse_args()
+
+
 commentPat = re.compile(r'\s*//')
-requirePat = re.compile(r'require_once\(\s*([^\)]+)\s*\)')
-phpFilePat = re.compile(r'\'([\w\.]+\.php)\'$')
+requirePat = re.compile(r'require_once\(\s*(dirname\(\s*__FILE__\s*\)\s*\.\s*)?([^\)]+)\s*\)')
+phpFilePat = re.compile(r'(?:\'([\w\./-]+\.php)\'|"([\w\./-]+\.php)")$')
 
 filepaths = {}
 
@@ -27,13 +39,15 @@ for (dirpath, dirnames, filenames) in os.walk("."):
                 match = requirePat.search(line)
 
                 if match:
-                    requiree = match.group(1)
+                    relative = match.group(1)
+                    requiree = match.group(2)
                     match    = phpFilePat.match(requiree)
 
                     if match:
-                        requires.append(match.group(1))
-                    else:
-                        sys.stderr.write("{}: error in {}: require_once of '{}'\n".format(__file__, filepath, requiree))
+                        requires.append(("." if relative else "") + (match.group(1) or match.group(2)))
+                        continue
+
+                    sys.stderr.write("{}: error in {}: require_once of '{}'\n".format(__file__, filepath, requiree))
 
         filepaths[filepath] = requires
 
