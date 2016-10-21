@@ -1,10 +1,41 @@
 #!/usr/bin/python
 
 import os
+import re
+import sys
+
+commentPat = re.compile(r'\s*//')
+requirePat = re.compile(r'require_once\(\s*([^\)]+)\s*\)')
+phpFilePat = re.compile(r'\'([\w\.]+\.php)\'$')
+
+filepaths = {}
 
 for (dirpath, dirnames, filenames) in os.walk("."):
     for filename in filenames:
         if not filename.endswith(".php"):
             continue
 
-        print(os.path.join(dirpath, filename))
+        filepath = os.path.join(dirpath, filename)
+        requires = []
+
+        with open(filepath) as filestream:
+            for line in filestream.readlines():
+                # Discard comments
+                if commentPat.match(line):
+                    continue
+
+                match = requirePat.search(line)
+
+                if match:
+                    requiree = match.group(1)
+                    match    = phpFilePat.match(requiree)
+
+                    if match:
+                        requires.append(match.group(1))
+                    else:
+                        sys.stderr.write("{}: error in {}: require_once of '{}'\n".format(__file__, filepath, requiree))
+
+        filepaths[filepath] = requires
+
+for filepath in filepaths:
+    print("{}: {}".format(filepath, filepaths[filepath]))
