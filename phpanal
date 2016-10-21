@@ -1,0 +1,10 @@
+#!/usr/bin/python
+
+import os
+
+for (dirpath, dirnames, filenames) in os.walk("."):
+    for filename in filenames:
+        if not filename.endswith(".php"):
+            continue
+
+        print(os.path.join(dirpath, filename))
