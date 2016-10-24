@@ -5,24 +5,19 @@ import os
 import re
 import sys
 
-argumentParser = argparse.ArgumentParser(
-        description="List the files in a directory (default .), or the lines of files matching a pattern if specified")
-fileCriteria = argumentParser.add_mutually_exclusive_group()
-fileCriteria.add_argument("-e", "--extension",         help="file names must end in the string 'EXTENSION'")
-fileCriteria.add_argument("-f", "--file-pat",          help="file name must match the regular expression /FILE_PAT/")
-argumentParser.add_argument("-N", "--no-line-numbers", help="don't include line numbers in output", action='store_true')
-argumentParser.add_argument("directory",               help="directory to search (defaults to '.')", default=".", nargs='?')
-argumentParser.add_argument("pattern",                 help="pattern to search for (list files by default)", nargs='?')
+argumentParser = argparse.ArgumentParser(description="Analyse the relationship between the PHP files in a project")
+argumentParser.add_argument("-D", "--not-directory", help="path name must not include the directory /DIR_PAT/")
+argumentParser.add_argument("directory",             help="directory to search (defaults to '.')", default=".", nargs='?')
 arguments = argumentParser.parse_args()
 
-
+notDirPat  = re.compile(r'(?:^|/)' + arguments.not_directory + '/') if arguments.not_directory else None
 commentPat = re.compile(r'\s*//')
 requirePat = re.compile(r'require_once\(\s*(dirname\(\s*__FILE__\s*\)\s*\.\s*)?([^\)]+)\s*\)')
 phpFilePat = re.compile(r'(?:\'([\w\./-]+\.php)\'|"([\w\./-]+\.php)")$')
 
 filepaths = {}
 
-for (dirpath, dirnames, filenames) in os.walk("."):
+for (dirpath, dirnames, filenames) in os.walk(arguments.directory):
     for filename in filenames:
         if not filename.endswith(".php"):
             continue
