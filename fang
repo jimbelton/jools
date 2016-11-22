@@ -83,6 +83,9 @@ def fileIsWanted(filePath, fileName=None):
 
     return True
 
+if sys.stdout.isatty():
+    print "=" * 79
+
 directories = os.walk(arguments.directory, followlinks=True)
 
 for directory in directories:
