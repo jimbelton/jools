@@ -1,0 +1,50 @@
+#!/usr/bin/python
+
+import argparse
+import os
+import re
+import sys
+
+numPat = None
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-s", "--strip", type=int,           help="strip STRIP leading blank separated fields")
+parser.add_argument("-m", "--meld", action="store_true", help="meld the two files rather than diffing them")
+parser.add_argument("file1",                             help="first file to compare")
+parser.add_argument("file2",                             help="second file to compare")
+args = parser.parse_args()
+
+fileNames = [args.file1, args.file2]
+fileLines = [[], []]
+
+if args.strip:
+    stripRe = re.compile(r'\s*' + r'\S+\s+' * args.strip + r'(.*)', re.DOTALL)
+
+for i in (0, 1):
+    fileIn = open(fileNames[i])
+
+    if args.strip:
+        fileStripped = fileNames[i] + ".stripped"
+        fileOut      = open(fileStripped, "w")
+
+    for line in fileIn:
+        if args.strip:
+            match = stripRe.match(line)
+
+            if match:
+                line = match.group(1)
+
+            fileOut.write(line)
+
+        fileLines[i].append(line)
+
+    fileIn.close()
+
+    if args.strip:
+        fileOut.close()
+        fileNames[i] = fileStripped
+
+if args.meld:
+    sys.exit(os.system("meld {} {}".format(fileNames[0], fileNames[1])))
+else:
+    sys.exit(os.system("diff {} {}".format(fileNames[0], fileNames[1])))
