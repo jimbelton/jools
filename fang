@@ -23,6 +23,7 @@ import sys
 
 argumentParser = argparse.ArgumentParser(
         description="List the files in a directory (default .), or the lines of files matching a pattern if specified")
+argumentParser.add_argument("-A", "--after-context",   help="print AFTER_CONTEXT extra lines after a match", default=0, type=int)
 fileCriteria = argumentParser.add_mutually_exclusive_group()
 fileCriteria.add_argument("-e", "--extension",         help="file names must end in the string 'EXTENSION'")
 fileCriteria.add_argument("-f", "--file-pat",          help="file name must match the regular expression /FILE_PAT/")
@@ -126,9 +127,9 @@ for directory in directories:
 #            die("$0: Can't open '" . $File::Find::name . "'");
 #        }
 
-        for (lineNumber, line) in enumerate(fileLines):
+        context = 0
 
-#        for (my $context = 0; my $line = <$file>; $context--) {
+        for (lineNumber, line) in enumerate(fileLines):
 #            if ($comment) {
 #                $line =~ s/${comment}//g;
 #            }
@@ -140,13 +141,11 @@ for directory in directories:
 #                }
 
                 print filePath + ("" if arguments.no_line_numbers else ":" + str(lineNumber)) + ":" + line,
-#                print filePath . ($options{n} ? ":" . $. : "") . ":$line";
-#                $context = $options{A} ? $options{A} + 1 : 0;
-#            }
-#            elsif ($context > 0) {
-#                print $File::Find::name . ($options{n} ? ":" . $. : "") . ":$line";
-#            }
-#        }
+                context = arguments.after_context
+
+            elif context > 0:
+                print filePath + ("" if arguments.no_line_numbers else ":" + str(lineNumber)) + ":" + line,
+                context -= 1
 #
 #        close $file;
 #    },
