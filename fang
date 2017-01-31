@@ -115,8 +115,15 @@ for directory in directories:
             print filePath
             continue
 
-        with open(filePath) as fileStream:
-            fileLines = fileStream.readlines()
+        try:
+            with open(filePath) as fileStream:
+                fileLines = fileStream.readlines()
+        except IOError as error:
+            if not os.path.islink(filePath) or os.path.exists(os.path.realpath(filePath)):
+                raise error
+
+            sys.stderr.write("Symbolic link '{}' points to non existent file '{}'\n".format(filePath, os.path.realpath(filePath)))
+            continue
 
 #        if (!open($file, "<", $_)) {
 #            if (-l $_) {
