@@ -136,7 +136,7 @@ for directory in directories:
 
         context = 0
 
-        for (lineNumber, line) in enumerate(fileLines):
+        for (lineNumber, line) in enumerate(fileLines, start=1):
 #            if ($comment) {
 #                $line =~ s/${comment}//g;
 #            }

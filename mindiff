@@ -116,7 +116,6 @@ if args.hex:
 
     fileOut.close()
 
-sys.exit(0)
 if args.meld:
     sys.exit(os.system("meld {} {}".format(fileNames[0], fileNames[1])))
 else:
