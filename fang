@@ -27,8 +27,9 @@ argumentParser.add_argument("-A", "--after-context",   help="print AFTER_CONTEXT
 fileCriteria = argumentParser.add_mutually_exclusive_group()
 fileCriteria.add_argument("-e", "--extension",         help="file names must end in the string 'EXTENSION'")
 fileCriteria.add_argument("-f", "--file-pat",          help="file name must match the regular expression /FILE_PAT/")
-argumentParser.add_argument("-x", "--exclude",         help="file name must not match the regular expression /EXCLUDE/")
+argumentParser.add_argument("-l", "--list-files",      help="only print the names of files that match the pattern", action='store_true')
 argumentParser.add_argument("-N", "--no-line-numbers", help="don't include line numbers in output", action='store_true')
+argumentParser.add_argument("-x", "--exclude",         help="file name must not match the regular expression /EXCLUDE/")
 argumentParser.add_argument("directory",               help="directory to search (defaults to '.')", default=".", nargs='?')
 argumentParser.add_argument("pattern",                 help="pattern to search for (list files by default)", nargs='?')
 arguments = argumentParser.parse_args()
@@ -142,6 +143,10 @@ for directory in directories:
 #            }
 
             if pattern.search(line):
+                if arguments.list_files:
+                    print filePath + ("" if arguments.no_line_numbers else ":" + str(lineNumber))
+                    break
+
 #                if ($options{l}) {
 #                    print $File::Find::name . ($options{n} ? ":" . $. : "") . "\n";
 #                    last;
