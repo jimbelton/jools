@@ -24,6 +24,7 @@ if upgrade:
 
 install("geany")
 install("git")
+install("qbittorrent")
 install("vim")
 
 # Configure bash
@@ -43,3 +44,9 @@ if os.system("git config --global user.name > /dev/null"):
     
 if os.system("git config --global core.editor > /dev/null"):
     os.system("git config --global core.editor vim")
+    
+# Make qbittorrent the default for magnet links. Should really check for
+# an existing setting first.
+
+os.system("gvfs-mime --set x-scheme-handler/magnet qBittorrent.desktop")
+
