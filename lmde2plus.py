@@ -22,6 +22,7 @@ os.system("sudo apt-get update")
 if upgrade:
     os.system("sudo apt-get upgrade") == 0 or sys.exit("sudo apt-get upgrade failed; have you set up the wireless password?")
 
+install("arp-scan")
 install("geany")
 install("git")
 install("qbittorrent")
