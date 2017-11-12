@@ -1,0 +1,58 @@
+#!/usr/bin/python
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+
+argumentParser = argparse.ArgumentParser(description="Show the differences between a set of files and a backup copy")
+argumentParser.add_argument("-H", "--hostname", help="name of the host; if no MAC specified, look up in ~/.hosttomac")
+argumentParser.add_argument("-m", "--mac",      help="ethernet MAC address; if specified write to ~/.hosttomac")
+arguments = argumentParser.parse_args()
+
+hostToMac = {}
+
+try:
+    with open(os.getenv("HOME") + "/.hosttomac") as hostToMacFP:
+        hostToMac = json.load(hostToMacFP)
+except IOError as error:
+    if os.path.exists(os.path.realpath(os.getenv("HOME") + "/.hosttomac")):
+        raise error
+
+if arguments.hostname:
+    if arguments.mac:
+        if hostToMac.get(arguments.hostname) and arguments.mac != hostToMac[arguments.hostname]:
+            sys.exit("Host " + arguments.hostname + " is already in ~/.hosttomac with MAC "
+                   + hostToMac[arguments.hostname] + " but you specified " + arguments.mac)
+
+    elif hostToMac.get(arguments.hostname):
+        arguments.mac = hostToMac[arguments.hostname]
+
+    else:
+        sys.exit("Host " + arguments.hostname + " specified without a MAC and not found in ~/.hosttomac")
+
+    output  = subprocess.check_output(["arp", "-n"])
+    linePat = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+ether\s+'
+                       + r'([\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f])')
+    hostIp  = None
+
+    for line in output.split('\n'):
+        match = linePat.match(line)
+
+        if match:
+            if match.group(2) == arguments.mac:
+                hostIp = match.group(1)
+
+    if not hostIp:
+        sys.stderr.write(output)
+        sys.exit("MAC address " + arguments.mac + " not found in arp -n output; try running: sudo arp-scan -l")
+
+    if not hostToMac.get(arguments.hostname):
+        hostToMac[arguments.hostname] = arguments.mac
+
+        with open(os.getenv("HOME") + "/.hosttomac", "w") as hostToMacFP:
+            json.dump(hostToMac, hostToMacFP)
+
+    print hostIp
