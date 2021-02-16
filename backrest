@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 
 import argparse
 import json
@@ -8,7 +8,7 @@ import subprocess
 import sys
 
 argumentParser = argparse.ArgumentParser(description="Show the differences between a set of files and a backup copy")
-argumentParser.add_argument("-H", "--hostname", help="name of the host; if no MAC specified, look up in ~/.hosttomac")
+argumentParser.add_argument("-H", "--hostname", help="name of the backup host; if no MAC specified, look up in ~/.hosttomac")
 argumentParser.add_argument("-m", "--mac",      help="ethernet MAC address; if specified write to ~/.hosttomac")
 arguments = argumentParser.parse_args()
 
@@ -33,7 +33,7 @@ if arguments.hostname:
     else:
         sys.exit("Host " + arguments.hostname + " specified without a MAC and not found in ~/.hosttomac")
 
-    output  = subprocess.check_output(["arp", "-n"])
+    output  = subprocess.check_output(["arp", "-n"], text=True)
     linePat = re.compile(r'(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\s+ether\s+'
                        + r'([\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f]:[\da-f][\da-f])')
     hostIp  = None
@@ -55,4 +55,4 @@ if arguments.hostname:
         with open(os.getenv("HOME") + "/.hosttomac", "w") as hostToMacFP:
             json.dump(hostToMac, hostToMacFP)
 
-    print hostIp
+    print(hostIp)
