@@ -8,8 +8,10 @@ import subprocess
 import sys
 
 argumentParser = argparse.ArgumentParser(description="Show the differences between a set of files and a backup copy")
-argumentParser.add_argument("-H", "--hostname", help="name of the backup host; if no MAC specified, look up in ~/.hosttomac")
-argumentParser.add_argument("-m", "--mac",      help="ethernet MAC address; if specified write to ~/.hosttomac")
+argumentParser.add_argument("-H", "--hostname",    help="name of the backup host; if no MAC specified, look up in ~/.hosttomac")
+argumentParser.add_argument("-m", "--mac",         help="ethernet MAC address; if specified write to ~/.hosttomac")
+argumentParser.add_argument("source", nargs="?", default=".", help="the source directory")
+argumentParser.add_argument("backup",              help="the backup directory")
 arguments = argumentParser.parse_args()
 
 hostToMac = {}
@@ -56,3 +58,17 @@ if arguments.hostname:
             json.dump(hostToMac, hostToMacFP)
 
     print(hostIp)
+
+print(arguments)
+
+files_by_size = {}
+files_by_name = {}
+
+for root, dirs, files in os.walk(arguments.backup):
+    for name in files:
+        size = os.path.getsize(os.path.join(root, name))
+        file = {"name": name, "dir": root, "size": size};
+        files_by_size[size] = files_by_size[size].append(file) if files_by_size.get(size) else [file]
+        files_by_name[name] = files_by_name[name].append(file) if files_by_name.get(name) else [file]
+
+print(files_by_name)
