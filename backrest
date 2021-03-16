@@ -16,7 +16,8 @@ def list_append(listref, element):
 
 argumentParser = argparse.ArgumentParser(description="Show the differences between a set of files and a backup copy")
 argumentParser.add_argument("-H", "--hostname",    help="name of the backup host; if no MAC specified, look up in ~/.hosttomac")
-argumentParser.add_argument("-m", "--mac",         help="ethernet MAC address; if specified write to ~/.hosttomac")
+argumentParser.add_argument("-M", "--mac",         help="ethernet MAC address; if specified write to ~/.hosttomac")
+argumentParser.add_argument("-m", "--move",     action='store_true', help="move files in the backup to match the source tree")
 argumentParser.add_argument("-n", "--noaction", action='store_true', help="take no actual action, only tell what would be done")
 argumentParser.add_argument("source", nargs="?", default=".", help="the source directory")
 argumentParser.add_argument("backup",              help="the backup directory")
@@ -68,20 +69,24 @@ if arguments.hostname:
     print(hostIp)
 
 print(arguments)
+source_path_len = len(os.path.abspath(arguments.source)) + 1    # roots from os.walk include absolute paths
+backup_path_len = len(os.path.abspath(arguments.backup)) + 1    # roots from os.walk include absolute paths
 
 # Build a model of the backup
 
-files_by_size = {}
-files_by_name = {}
+files_by_size   = {}
+files_by_name   = {}
 
 for root, dirs, files in os.walk(arguments.backup):
     for name in files:
         size = os.path.getsize(os.path.join(root, name))
-        file = {"name": name, "dir": root, "size": size};
+        file = {"name": name, "dir": root[backup_path_len:], "size": size};
         files_by_size[size] = list_append(files_by_size.get(size), file)
         files_by_name[name] = list_append(files_by_name.get(name), file)
 
 for root, dirs, files in os.walk(arguments.source):
+    dir = root[source_path_len:]
+    
     for name in files:
         size       = os.path.getsize(os.path.join(root, name))
         back_files = files_by_name.get(name)
@@ -89,4 +94,6 @@ for root, dirs, files in os.walk(arguments.source):
         if back_files:
             if len(back_files) == 1:
                 if size == back_files[0]['size']:
-                    print("Found exactly one {}".format(name))
+                    if arguments.move and dir != back_files[0]['dir']:
+                        # if arguments.noaction:
+                        print("Would move {} from {} to {}".format(name, back_files[0]['dir'], dir))
