@@ -88,7 +88,8 @@ for root, dirs, files in os.walk(arguments.source):
     dir = root[source_path_len:]
     
     for name in files:
-        size       = os.path.getsize(os.path.join(root, name))
+        path       = os.path.join(root, name)
+        size       = os.path.getsize(path)
         back_files = files_by_name.get(name)
         
         if back_files:
@@ -97,3 +98,19 @@ for root, dirs, files in os.walk(arguments.source):
                     if arguments.move and dir != back_files[0]['dir']:
                         # if arguments.noaction:
                         print("Would move {} from {} to {}".format(name, back_files[0]['dir'], dir))
+            
+            continue
+            
+        back_files = files_by_size.get(size)
+        
+        if back_files:
+            if len(back_files) == 1:
+                if filecmp.cmp(path, os.path.join(back_files[0]["dir"], back_files[0]["name"])):
+                    if arguments.rename:
+                        # if arguments.noaction:
+                        print("Would rename {} from {} to {}".format(name, back_files[0]['dir'], dir))
+                        
+            continue
+            
+        # if argument.noaction:
+        print("Would copy new file {} to {}".format(path, os.path.join(arguments.backup, dir, name)))
