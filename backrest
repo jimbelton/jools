@@ -17,13 +17,15 @@ def list_append(listref, element):
     return [element]
 
 argumentParser = argparse.ArgumentParser(description="Show the differences between a set of files and a backup copy")
-argumentParser.add_argument("-H", "--hostname",    help="name of the backup host; if no MAC specified, look up in ~/.hosttomac")
-argumentParser.add_argument("-M", "--mac",         help="ethernet MAC address; if specified write to ~/.hosttomac")
+argumentParser.add_argument("-H", "--hostname", help="name of the backup host; if no MAC specified, look up in ~/.hosttomac")
+argumentParser.add_argument("-M", "--mac",      help="ethernet MAC address; if specified write to ~/.hosttomac")
 argumentParser.add_argument("-m", "--move",     action='store_true', help="move files in the backup to match the source tree")
 argumentParser.add_argument("-n", "--noaction", action='store_true', help="take no actual action, only tell what would be done")
 argumentParser.add_argument("-r", "--rename",   action='store_true', help="rename files in the backup to match the source tree")
+argumentParser.add_argument("-u", "--update",   action='store_true', help="update files in the backup to match the source tree")
+argumentParser.add_argument("-d", "--debug",    action='store_true', help="print out a lot of information helpful in debugging")
 argumentParser.add_argument("source", nargs="?", default=".", help="the source directory")
-argumentParser.add_argument("backup",              help="the backup directory")
+argumentParser.add_argument("backup",                         help="the backup directory")
 arguments = argumentParser.parse_args()
 
 hostToMac = {}
@@ -95,12 +97,24 @@ for root, dirs, files in os.walk(arguments.source):
         size       = os.path.getsize(path)
         back_files = files_by_name.get(name)
 
+        if arguments.debug:
+            print("File {} ({} bytes)".format(path, size))
+
         if back_files:
             if len(back_files) == 1:
                 if size == back_files[0]['size']:
                     if arguments.move and dir != back_files[0]['dir']:
                         # if arguments.noaction:
                         print("Would move {} from {} to {}".format(name, back_files[0]['dir'], dir))
+                elif arguments.update:
+                    if dir == back_files[0]['dir']:
+                        if arguments.noaction:
+                            print("Would update {} in {}".format(name, back_files[0]['dir'] if  back_files[0]['dir'] else "."))
+                        else:
+                            shutil.copyfile(path, os.path.join(arguments.backup, dir, name))
+                    elif arguments.move:
+                        # if arguments.noaction:
+                        print("Would update and move {} from {} to {}".format(name, back_files[0]['dir'], dir))
 
             continue
 
